@@ -379,6 +379,33 @@ function Copy-Repository {
 
     return $null
 }
+function Clone-Repositories {
+    param (
+        [string] $jsonContentPath,
+        [string] $outputPath = ''
+    )
+    $reposToClone = Get-RepositoriesToInclude
+
+    $jsonContent = Get-Content -Path $jsonContentPath | ConvertFrom-Json
+    if (-not (Test-Path -Path $outputPath)) {
+        New-Item -ItemType Directory -Path $outputPath | Out-Null
+    }
+    Push-Location $outputPath
+    $repos = @()
+    foreach ($repo in ($jsonContent.value )) {
+        # clone repo if not excluded
+        if ($reposToClone -contains $repo.name) {
+            $repoUrl = $repo.remoteUrl
+            $repoName = $repoUrl.Split("/")[-1]
+            git clone $repoUrl $repoName
+            $repos += $repoName
+        } else {
+            Write-Host Excluded $repo.name from cloning
+        }
+    }
+    Pop-Location
+}
+
 
 function Create-PullRequest {
     param (
