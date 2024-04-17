@@ -170,6 +170,16 @@ function Get-PolicyTypes {
     return $policyTypes.value
 }
 
+function Update-PolicyConfiguration {
+    param (
+        [bool] $useTargetProject,
+        [PSObject] $body,
+        [string] $configurationId
+    )
+
+    $policyApiClient.UpdatePolicyConfiguration($useTargetProject, $body, $configurationId)
+}
+
 # function Get-PolicyConfigurationRaw {
 #     param (
 #         [switch] $useTargetProject,

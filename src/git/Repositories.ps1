@@ -379,3 +379,75 @@ function Copy-Repository {
 
     return $null
 }
+
+function Create-PullRequest {
+    param (
+    [bool] $useTargetProject,
+    [string] $repositoryId,
+    [psobject] $pullRequestCreateBody
+    )
+    return $gitApiClient.CreatePullRequest($useTargetProject, $pullRequestCreateBody, $repositoryId)
+}
+
+function Get-PullRequests {
+    param (
+    [bool] $useTargetProject,
+    [string] $repositoryId
+    )
+    return $gitApiClient.GetPullRequests($useTargetProject, $repositoryId)
+}
+
+function Update-PullRequest {
+    param (
+        [bool] $useTargetProject,
+        [psobject] $pullRequestUpdateBody,
+        [string] $pullRequestId,
+        [string] $repositoryId
+    )
+    return $gitApiClient.UpdatePullRequest($useTargetProject, $pullRequestUpdateBody, $repositoryId, $pullRequestId)
+}
+
+function Export-Repositories-JSON {
+    param (
+        [switch] $useTargetProject,
+        [string] $outputPath,
+        [string] $outputFileName
+    )
+
+    $repositories = $gitApiClient.GetRepositories($useTargetProject)
+
+    if ($repositories.count -gt 0) {
+        New-Item -ItemType Directory -Force -Path $outputPath | Out-Null
+    }
+
+    foreach ($repository in $repositories) {
+        $name = $repository.name -replace '[\[\]\<\>\:\"\/\\\|\?\*]', '_'
+        ConvertTo-Json $repository -Depth 100 > "$outputPath\$exportRepositoriesFileName"
+    }
+}
+function Push-File-To-Repository {
+    param (
+        [bool] $useTargetProject,
+        [string] $destinationFolderName,
+        [string] $sourceFilePath,
+        [string] $sourceBranchName,
+        [string] $commitMessage
+    )
+        $destinationFolderPath = Join-Path -Path $repo.FullName -ChildPath $destinationFolderName
+
+        # # Create the destination folder if it doesn't exist
+        if (-not (Test-Path -Path $destinationFolderPath)) {
+            # New-Item -ItemType Directory -Path $destinationFolderPath | Out-Null
+            Write-Host "Pipelines doesnt exist"
+            continue
+        }
+        # # Copy the file to the destination folder
+        $destinationFilePath = Join-Path -Path $destinationFolderPath -ChildPath (Split-Path -Path $sourceFilePath -Leaf)
+        git checkout -b $sourceBranchName
+
+        Copy-Item -Path $sourceFilePath -Destination $destinationFilePath
+        $relativePath = (Resolve-Path -Path $destinationFilePath -Relative)
+        git add $relativePath
+        git commit -m $commitMessage
+        git push -u origin $sourceBranchName
+}

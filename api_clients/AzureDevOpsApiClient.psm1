@@ -48,7 +48,7 @@ class AzureDevOpsApiClient {
         $this.Auth = [AuthFlow]::PersonalAccessToken
     }
 
-    [PSObject] ComposeHeaders([bool] $useTargetProject) {
+    [PSObject] ComposeHeaders([bool] $useTargetProject, [bool] $isJsonPatch) {
         $authHeader = ''
         $personalAccessToken = $this.SourcePersonalAccessToken
 
@@ -62,19 +62,26 @@ class AzureDevOpsApiClient {
                 break;
             }
             default {
+
                 throw "Auth flow not supported."
             }
         }
+        if ($isJsonPatch -eq $true) {
+            return @{
+                'Authorization' = $authHeader
+                'Content-Type' = 'application/json-patch+json'
+            }
 
+        }
         return @{
             'Authorization' = $authHeader
             'Content-Type' = 'application/json'
         }
     }
 
-    [PSObject] CallRestAPI([bool] $isVSRMRequest, [bool] $useTargetProject, [string] $method, [string] $endpoint, [string] $apiVersion, [PSObject] $body) {
+    [PSObject] CallRestAPI([bool] $isVSRMRequest, [bool] $useTargetProject, [string] $method, [string] $endpoint, [string] $apiVersion, [PSObject] $body, [bool] $isJsonPatch) {
 
-        $requestHeaders = $this.ComposeHeaders($useTargetProject)
+        $requestHeaders = $this.ComposeHeaders($useTargetProject, $isJsonPatch)
 
         if ($useTargetProject) {
             $serviceHost = $this.TargetServiceHost
@@ -110,11 +117,14 @@ class AzureDevOpsApiClient {
         return Invoke-RestMethod -Method $method -Uri $uri -Headers $requestHeaders -Body $bodyJson
     }
 
-    [PSObject] Request([bool] $useTargetProject, [string] $method, [string] $endpoint, [string] $apiVersion, [PSObject] $body) {
-        return $this.CallRestAPI($false, $useTargetProject, $method, $endpoint, $apiVersion, $body)
+    [PSObject] Request([bool] $useTargetProject, [string] $method, [string] $endpoint, [string] $apiVersion, [PSObject] $body, [bool] $isJsonPatch = $false) {
+        return $this.CallRestAPI($false, $useTargetProject, $method, $endpoint, $apiVersion, $body, $isJsonPatch)
     }
 
+    [PSObject] Request([bool] $useTargetProject, [string] $method, [string] $endpoint, [string] $apiVersion, [PSObject] $body) {
+        return $this.CallRestAPI($false, $useTargetProject, $method, $endpoint, $apiVersion, $body, $false)
+    }
     [PSObject] VSRMRequest([bool] $useTargetProject, [string] $method, [string] $endpoint, [string] $apiVersion, [PSObject] $body) {
-        return $this.CallRestAPI($true, $useTargetProject, $method, $endpoint, $apiVersion, $body)
+        return $this.CallRestAPI($true, $useTargetProject, $method, $endpoint, $apiVersion, $body, $false)
     }
 }

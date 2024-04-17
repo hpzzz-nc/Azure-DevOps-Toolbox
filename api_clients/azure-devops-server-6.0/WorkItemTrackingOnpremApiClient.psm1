@@ -211,8 +211,8 @@ class WorkItemTrackingOnpremApiClient : AzureDevOpsApiClient {
     }
 
     # Updates a single work item.
-    [PSObject] UpdateWorkItem([bool] $useTargetProject, [PSObject] $body, [int] $id) {
-        return $this.Request($useTargetProject, 'patch', "wit/workitems/$id", $this.apiVersion, $body)
+    [PSObject] UpdateWorkItem([bool] $useTargetProject, [PSObject] $body, [int] $id, [bool] $isJsonPatch) {
+        return $this.Request($useTargetProject, 'patch', "wit/workitems/$id", $this.apiVersion, $body, $isJsonPatch)
     }
      # Returns a single work item.
     [PSObject] GetWorkItem([bool] $useTargetProject, [int] $id) {
